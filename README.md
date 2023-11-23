@@ -1,5 +1,8 @@
-I used a lot of python modules/libraries for this program. There are various codes in this respository. I combined all codes one by one using Abstraction.
+I used a lot of python modules/libraries for this program. There are various codes in this respository. 
+I combined all codes one by one using Abstraction.
+
 It is advised to upload non-fire and fire dataset separately. Comment them one by one and run the codes.
+
 I coded the sound file using winsound module of python.
 
 
