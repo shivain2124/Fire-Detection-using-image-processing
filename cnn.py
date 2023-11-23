@@ -2,10 +2,11 @@ import os
 import cv2
 import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix, classification_report
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 from keras.utils import to_categorical
-import winsound  # Import winsound for playing sound
+import winsound
 
 # Step 1: Load and Prepare the Dataset
 X = []  # Features (images)
@@ -17,7 +18,7 @@ non_fire_directory = r"D:\dsa dataset\image_dataset\not_images"
 
 # Load fire images and assign label 1
 for filename in os.listdir(fire_directory):
-    if filename.endswith('.jpg') :#or filename.endswith('.png'):
+    if filename.endswith('.jpg') or filename.endswith('.png'):
         image = cv2.imread(os.path.join(fire_directory, filename))
         # Resize the image to a fixed size (e.g., 128x128 pixels)
         image = cv2.resize(image, (128, 128))
@@ -52,8 +53,8 @@ X = X.astype('float32') / 255.0
 # Convert labels to one-hot encoding
 y = to_categorical(y, 2)  # 2 is the number of classes (fire and non-fire)
 
-# Step 2: Split the Dataset
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Step 2: Split the Dataset with Stratification
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
 # Step 3: Build the CNN Model
 model = Sequential()
@@ -69,11 +70,31 @@ model.add(Dense(2, activation='softmax'))  # Output layer with 2 units (fire and
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 # Step 4: Train the Model
-model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test), verbose=0)
+model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
 
 # Step 5: Evaluate the Model (optional)
-loss, accuracy = model.evaluate(X_test, y_test)
-print("Test Accuracy:", accuracy)
+try:
+    loss, accuracy = model.evaluate(X_test, y_test)
+    print("Test Accuracy:", accuracy)
+
+    # Generate predictions
+    y_pred = model.predict(X_test)
+
+    # Convert predictions to labels (0 or 1)
+    y_pred_labels = np.argmax(y_pred, axis=1)
+    y_true_labels = np.argmax(y_test, axis=1)
+
+    # Create a confusion matrix
+    cm = confusion_matrix(y_true_labels, y_pred_labels)
+    print("Confusion Matrix:")
+    print(cm)
+
+    # Print a classification report for more detailed metrics
+    print("Classification Report:")
+    print(classification_report(y_true_labels, y_pred_labels))
+except Exception as e:
+    print("Error during evaluation:", e)
+
 
 # Step 6: Process Images and Ring Alarm for Fire Detection
 for i in range(len(X_test)):
@@ -84,7 +105,7 @@ for i in range(len(X_test)):
     predictions = model.predict(np.expand_dims(current_image, axis=0))
 
     # Check if the prediction indicates fire (you may need to adjust the threshold)
-    if predictions[0, 1] > 0.25:
+    if predictions[0, 1] > 0.50:
         print("Fire detected in image {}".format(i))
 
         # Ring the alarm using winsound (adjust the frequency and duration as needed)
